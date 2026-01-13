@@ -30,11 +30,26 @@ export default function WritingPage({ topic, initialContent, existingSessionId, 
   const [showInspiration, setShowInspiration] = useState(false)
   const [currentInspirationIndex, setCurrentInspirationIndex] = useState(0)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const sessionRef = useRef(currentSession)
+
+  // Keep ref in sync with current session
+  useEffect(() => {
+    sessionRef.current = currentSession
+  }, [currentSession])
 
   // Initialize session when component mounts or topic changes
   useEffect(() => {
     startSession(topic, existingSessionId, initialContent)
-    return () => clearSession()
+
+    // Save draft before unmounting if there's content
+    return () => {
+      const session = sessionRef.current
+      if (session && session.content.trim().length >= 5 && user) {
+        // Save the draft before clearing (fire and forget)
+        saveSession().catch(console.error)
+      }
+      clearSession()
+    }
   }, [topic.id, existingSessionId])
 
   // Auto-save with debouncing
@@ -73,6 +88,14 @@ export default function WritingPage({ topic, initialContent, existingSessionId, 
     onSubmit(currentSession.content)
   }
 
+  const handleBack = async () => {
+    // Save draft before going back
+    if (currentSession && currentSession.content.trim().length >= 5 && user) {
+      await saveSession()
+    }
+    onBack()
+  }
+
   const cycleInspiration = () => {
     setCurrentInspirationIndex((prev) => (prev + 1) % topic.inspiration.angles.length)
   }
@@ -83,7 +106,7 @@ export default function WritingPage({ topic, initialContent, existingSessionId, 
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-[#1a1625]/90 backdrop-blur-sm border-b border-stone-200 dark:border-violet-900/30">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
           <button
-            onClick={onBack}
+            onClick={handleBack}
             className="flex items-center gap-2 text-stone-500 dark:text-violet-300/70 hover:text-stone-800 dark:hover:text-violet-100 transition-colors"
           >
             <ArrowLeft className="w-5 h-5" />

@@ -128,7 +128,22 @@ export const useWritingStore = create<WritingState>((set, get) => ({
       })
 
       if (!response.ok) {
-        throw new Error('Failed to save session')
+        // Try to get the actual error message from the response
+        let errorMessage = 'Failed to save session'
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch {
+          // If we can't parse the error, use status text
+          errorMessage = `保存失败 (${response.status})`
+        }
+
+        // Add specific message for unauthorized
+        if (response.status === 401) {
+          errorMessage = '请先登录以保存您的写作'
+        }
+
+        throw new Error(errorMessage)
       }
 
       const { session } = await response.json()

@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { Clock, FileText, Eye, Trash2, Edit } from 'lucide-react'
+import { Clock, FileText, Trash2 } from 'lucide-react'
 
 const categoryEmojis: Record<string, string> = {
   imagination: "🌙",
@@ -40,7 +40,10 @@ export function HistoryCard({ session }: HistoryCardProps) {
     minute: '2-digit'
   })
 
-  const handleDelete = async () => {
+  const handleDelete = async (e: React.MouseEvent) => {
+    e.stopPropagation() // Prevent card click
+    e.preventDefault() // Prevent link navigation
+
     if (!confirm('确定要删除这篇写作吗？此操作不可恢复。')) {
       return
     }
@@ -64,16 +67,19 @@ export function HistoryCard({ session }: HistoryCardProps) {
     }
   }
 
-  const handleEdit = () => {
-    // Navigate to writing page with session ID to load existing content
-    router.push(`/?session=${session.id}`)
-  }
+  // Determine the link href based on session status
+  const cardHref = session.status === 'draft'
+    ? `/?session=${session.id}`
+    : `/history/${session.id}`
 
   return (
-    <div className="bg-white dark:bg-[#1a1625] rounded-2xl shadow-sm border border-stone-200 dark:border-violet-900/30 p-6 hover:shadow-md dark:hover:shadow-violet-900/10 transition-shadow">
+    <Link
+      href={cardHref}
+      className="block bg-white dark:bg-[#1a1625] rounded-2xl shadow-sm border border-stone-200 dark:border-violet-900/30 p-6 hover:shadow-md dark:hover:shadow-violet-900/10 hover:-translate-y-0.5 transition-all cursor-pointer relative"
+    >
       <div className="flex items-start justify-between">
         {/* Left: Topic Info */}
-        <div className="flex-1">
+        <div className="flex-1 pr-20">
           <div className="flex items-center gap-3 mb-3">
             <span className="text-2xl">
               {categoryEmojis[session.topics.category] || '✨'}
@@ -108,48 +114,29 @@ export function HistoryCard({ session }: HistoryCardProps) {
           </div>
         </div>
 
-        {/* Right: Action Buttons */}
-        <div className="flex items-center gap-2">
-          {session.status === 'draft' && (
-            <button
-              onClick={handleEdit}
-              className="flex items-center gap-2 px-3 py-2 bg-amber-100 dark:bg-violet-900/40 hover:bg-amber-200 dark:hover:bg-violet-800/50 text-amber-700 dark:text-violet-300 rounded-lg transition-colors"
-              title="编辑草稿"
-            >
-              <Edit className="w-4 h-4" />
-              <span>编辑</span>
-            </button>
-          )}
-
-          <button
-            onClick={handleDelete}
-            disabled={isDeleting}
-            className="flex items-center gap-2 px-3 py-2 bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50"
-            title="删除"
-          >
+        {/* Delete Button (absolute positioned to not affect layout) */}
+        <button
+          onClick={handleDelete}
+          disabled={isDeleting}
+          className="absolute top-6 right-6 w-8 h-8 flex items-center justify-center bg-red-100 dark:bg-red-900/30 hover:bg-red-200 dark:hover:bg-red-900/40 text-red-700 dark:text-red-400 rounded-lg transition-colors disabled:opacity-50"
+          title={session.status === 'draft' ? '删除草稿' : '删除记录'}
+        >
+          {isDeleting ? (
+            <div className="w-4 h-4 border-2 border-red-500 border-t-transparent animate-spin rounded-full" />
+          ) : (
             <Trash2 className="w-4 h-4" />
-            <span>{isDeleting ? '删除中...' : '删除'}</span>
-          </button>
-
-          <Link
-            href={`/history/${session.id}`}
-            className="flex items-center gap-2 px-3 py-2 bg-stone-100 dark:bg-[#2d2640] hover:bg-stone-200 dark:hover:bg-[#3d3654] text-stone-700 dark:text-violet-200 rounded-lg transition-colors"
-            title="查看详情"
-          >
-            <Eye className="w-4 h-4" />
-            <span>查看</span>
-          </Link>
-        </div>
+          )}
+        </button>
       </div>
 
       {/* Preview */}
       {session.word_count > 0 && (
         <div className="mt-4 pt-4 border-t border-stone-100 dark:border-violet-900/20">
           <p className="text-stone-400 dark:text-violet-300/40 text-sm line-clamp-2 font-serif">
-            点击查看完整内容...
+            {session.status === 'draft' ? '点击继续编辑...' : '点击查看详情...'}
           </p>
         </div>
       )}
-    </div>
+    </Link>
   )
 }

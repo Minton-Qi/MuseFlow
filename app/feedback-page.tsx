@@ -28,22 +28,30 @@ export default function FeedbackPage({ topic, content, onStartNew, onBack }: Fee
   const [feedback, setFeedback] = useState<WritingFeedback | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(true);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
   const { user } = useAuthStore();
   const { currentSession } = useWritingStore();
 
   useEffect(() => {
     const loadFeedback = async () => {
-      const result = await generateWritingFeedback(content, topic.prompt);
-      setFeedback(result);
-      setIsAnalyzing(false);
+      try {
+        const result = await generateWritingFeedback(content, topic.prompt);
+        setFeedback(result);
+        setIsAnalyzing(false);
 
-      // Save completed writing session and feedback to database
-      if (user && currentSession) {
-        await saveSessionAndFeedback(result);
+        // Save completed writing session and feedback to database
+        if (user && currentSession) {
+          await saveSessionAndFeedback(result);
+        } else if (!user) {
+          console.warn('User not authenticated, skipping session save');
+        }
+      } catch (error) {
+        console.error('Error loading feedback:', error);
+        setIsAnalyzing(false);
       }
     };
     loadFeedback();
-  }, [content, topic.prompt]);
+  }, [content, topic.prompt, user, currentSession]);
 
   const saveSessionAndFeedback = async (feedbackResult: WritingFeedback) => {
     try {
@@ -64,11 +72,15 @@ export default function FeedbackPage({ topic, content, onStartNew, onBack }: Fee
         });
 
         if (!updateResponse.ok) {
-          console.error('Failed to update session');
+          const errorData = await updateResponse.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Failed to update session:', errorData);
+          setSaveError(`保存失败: ${errorData.error || '未知错误'}`);
           return;
         }
       } else {
-        // No existing session, create a new one (fallback for when user didn't log in when starting)
+        // No existing session, create a new one (fallback for when auto-save didn't run)
+        console.log('Creating new session for completed writing...');
+
         const sessionResponse = await fetch('/api/writing/sessions', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -82,12 +94,21 @@ export default function FeedbackPage({ topic, content, onStartNew, onBack }: Fee
         });
 
         if (!sessionResponse.ok) {
-          console.error('Failed to save session');
+          const errorData = await sessionResponse.json().catch(() => ({ error: 'Unknown error' }));
+          console.error('Failed to save session:', errorData);
+
+          // Show specific error for unauthorized
+          if (sessionResponse.status === 401) {
+            setSaveError('请先登录以保存您的写作');
+          } else {
+            setSaveError(`保存失败: ${errorData.error || '未知错误'}`);
+          }
           return;
         }
 
         const { session } = await sessionResponse.json();
         sessionId = session.id;
+        console.log('Session created successfully:', sessionId);
       }
 
       setSessionId(sessionId!);
@@ -106,10 +127,15 @@ export default function FeedbackPage({ topic, content, onStartNew, onBack }: Fee
       });
 
       if (!feedbackResponse.ok) {
-        console.error('Failed to save feedback');
+        const errorData = await feedbackResponse.json().catch(() => ({ error: 'Unknown error' }));
+        console.error('Failed to save feedback:', errorData);
+        setSaveError(`反馈保存失败: ${errorData.error || '未知错误'}`);
+      } else {
+        console.log('Feedback saved successfully');
       }
     } catch (error) {
       console.error('Error saving session and feedback:', error);
+      setSaveError('保存过程中发生错误');
     }
   };
 
@@ -181,6 +207,25 @@ ${feedback.improvedSentence ? `
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-stone-100 via-stone-50 to-amber-50 dark:from-[#0f0d1a] dark:via-[#1a1625] dark:to-[#0f0d1a]">
+      {/* Save Error Notification */}
+      {saveError && (
+        <div className="fixed top-4 left-1/2 -translate-x-1/2 z-50 max-w-md bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800/50 text-red-700 dark:text-red-300 px-6 py-4 rounded-xl shadow-lg">
+          <div className="flex items-start gap-3">
+            <span className="text-xl">⚠️</span>
+            <div className="flex-1">
+              <p className="font-medium">保存失败</p>
+              <p className="text-sm mt-1">{saveError}</p>
+            </div>
+            <button
+              onClick={() => setSaveError(null)}
+              className="text-red-400 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <header className="sticky top-0 z-10 bg-white/80 dark:bg-[#1a1625]/90 backdrop-blur-sm border-b border-stone-200 dark:border-violet-900/30">
         <div className="max-w-4xl mx-auto px-6 py-4 flex items-center justify-between">
