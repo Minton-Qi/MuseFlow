@@ -44,7 +44,7 @@ export default function WritingPage({ topic, initialContent, existingSessionId, 
     // Save draft before unmounting if there's content
     return () => {
       const session = sessionRef.current
-      if (session && session.content.trim().length >= 5 && user) {
+      if (session && session.content.trim().length > 0 && user) {
         // Save the draft before clearing (fire and forget)
         saveSession().catch(console.error)
       }
@@ -55,10 +55,10 @@ export default function WritingPage({ topic, initialContent, existingSessionId, 
   // Auto-save with debouncing
   useEffect(() => {
     const timer = setTimeout(async () => {
-      if (currentSession && currentSession.content.length >= 5 && user) {
+      if (currentSession && currentSession.content.length > 0 && user) {
         await saveSession()
       }
-    }, 5000) // Auto-save every 5 seconds of inactivity
+    }, 3000) // Auto-save every 3 seconds of inactivity
 
     return () => clearTimeout(timer)
   }, [currentSession?.content, user])
@@ -90,7 +90,7 @@ export default function WritingPage({ topic, initialContent, existingSessionId, 
 
   const handleBack = async () => {
     // Save draft before going back
-    if (currentSession && currentSession.content.trim().length >= 5 && user) {
+    if (currentSession && currentSession.content.trim().length > 0 && user) {
       await saveSession()
     }
     onBack()
