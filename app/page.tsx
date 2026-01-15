@@ -149,12 +149,12 @@ export default function Home() {
       <Header />
 
       {/* Hero Section */}
-      <header className="pt-12 pb-8 text-center">
-        <h1 className="text-4xl font-light text-stone-800 dark:text-violet-100 tracking-wide mb-2">
-          选择一个题目，开启您的写作之旅
+      <header className="pt-8 sm:pt-12 pb-6 sm:pb-8 text-center px-4">
+        <h1 className="text-2xl sm:text-4xl font-light text-stone-800 dark:text-violet-100 tracking-wide mb-2">
+          选择航线，开启你的旅程
         </h1>
-        <p className="text-stone-500 dark:text-violet-300/70">
-          {user ? "继续探索您的创意世界" : "登录以保存您的作品"}
+        <p className="text-sm sm:text-base text-stone-500 dark:text-violet-300/70">
+          {user ? "继续探索你的内心世界" : "登录以保存你的作品"}
         </p>
       </header>
 

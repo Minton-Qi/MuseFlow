@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { User, Mail, Calendar, Target, Trophy, Flame } from 'lucide-react'
+import { User, Mail, Calendar, Target, Trophy, Flame, LogOut } from 'lucide-react'
 import { Header } from '@/components/common/Header'
 import { useAuthStore } from '@/lib/store/authStore'
 import { StatCard } from '@/components/profile/StatCard'
@@ -25,7 +25,12 @@ interface ChartData {
 }
 
 export default function ProfilePage() {
-  const { user } = useAuthStore()
+  const { user, signOut } = useAuthStore()
+
+  const handleSignOut = async () => {
+    await signOut()
+    window.location.href = '/'
+  }
   const [stats, setStats] = useState<UserStats | null>(null)
   const [chartData, setChartData] = useState<ChartData[]>([])
   const [loading, setLoading] = useState(true)
@@ -72,30 +77,43 @@ export default function ProfilePage() {
       <main className="max-w-5xl mx-auto px-6 pb-16 space-y-8">
         {/* User Info Card */}
         <div className="bg-white dark:bg-[#1a1625] rounded-2xl shadow-sm border border-stone-200 dark:border-violet-900/30 p-6">
-          <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-gradient-to-br from-stone-200 to-stone-300 dark:from-violet-700 dark:to-indigo-700 flex items-center justify-center">
-              <User className="w-8 h-8 text-stone-500 dark:text-violet-200" />
-            </div>
-            <div className="flex-1">
-              <h2 className="text-xl font-semibold text-stone-800 dark:text-violet-100">
-                {user?.email || '用户'}
-              </h2>
-              <div className="flex items-center gap-4 text-sm text-stone-400 dark:text-violet-300/50 mt-1">
-                <div className="flex items-center gap-1">
-                  <Mail className="w-4 h-4" />
-                  <span>{user?.email}</span>
-                </div>
-                {stats?.last_activity_at && (
-                  <div className="flex items-center gap-1">
-                    <Calendar className="w-4 h-4" />
-                    <span>
-                      上次活动:{' '}
-                      {new Date(stats.last_activity_at).toLocaleDateString('zh-CN')}
-                    </span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4 flex-1">
+              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-stone-200 to-stone-300 dark:from-violet-700 dark:to-indigo-700 flex items-center justify-center">
+                <User className="w-8 h-8 text-stone-500 dark:text-violet-200" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-xl font-semibold text-stone-800 dark:text-violet-100 truncate">
+                  {user?.email || '用户'}
+                </h2>
+                <div className="flex items-center gap-4 text-sm text-stone-400 dark:text-violet-300/50 mt-1">
+                  <div className="flex items-center gap-1 truncate">
+                    <Mail className="w-4 h-4 flex-shrink-0" />
+                    <span className="truncate">{user?.email}</span>
                   </div>
-                )}
+                  {stats?.last_activity_at && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <Calendar className="w-4 h-4" />
+                      <span className="hidden sm:inline">
+                        上次活动:{' '}
+                        {new Date(stats.last_activity_at).toLocaleDateString('zh-CN')}
+                      </span>
+                      <span className="sm:hidden">
+                        {new Date(stats.last_activity_at).toLocaleDateString('zh-CN')}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
+            <button
+              onClick={handleSignOut}
+              className="ml-4 flex items-center gap-2 px-4 py-2 text-stone-600 dark:text-violet-200/80 hover:text-stone-800 dark:hover:text-violet-100 hover:bg-stone-100 dark:hover:bg-[#2d2640] rounded-lg transition-colors text-sm flex-shrink-0"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="hidden sm:inline">退出登录</span>
+              <span className="sm:hidden">退出</span>
+            </button>
           </div>
         </div>
 
