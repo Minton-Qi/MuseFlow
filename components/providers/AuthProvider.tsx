@@ -14,18 +14,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     // Initialize auth state on mount
     async function init() {
-      await refreshSession()
-      setIsInitialized(true)
+      try {
+        await refreshSession()
+      } catch (error) {
+        console.error('Auth initialization failed:', error)
+        // Even if auth fails, continue to load the app
+        setLoading(false)
+      } finally {
+        setIsInitialized(true)
+      }
     }
 
     init()
-  }, [refreshSession])
+
+    // Add timeout to prevent infinite loading
+    const timeout = setTimeout(() => {
+      if (!isInitialized) {
+        console.warn('Auth initialization timed out')
+        setLoading(false)
+        setIsInitialized(true)
+      }
+    }, 3000)
+
+    return () => clearTimeout(timeout)
+  }, [refreshSession, setLoading, isInitialized])
 
   // Prevent flash of unauthenticated content
   if (!isInitialized) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-stone-100 via-stone-50 to-amber-50 flex items-center justify-center">
-        <div className="text-stone-400">加载中...</div>
+      <div className="min-h-screen bg-gradient-to-br from-stone-100 via-stone-50 to-amber-50 dark:from-[#0f0d1a] dark:via-[#1a1625] dark:to-[#0f0d1a] flex items-center justify-center">
+        <div className="text-stone-400 dark:text-violet-300/60">加载中...</div>
       </div>
     )
   }
