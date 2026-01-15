@@ -16,15 +16,18 @@ export default function LoginPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Login form submitted', { email })
     setError('')
     setLoading(true)
 
     const result = await signIn(email, password)
 
     if (result.error) {
+      console.error('Login failed:', result.error)
       setError(result.error)
       setLoading(false)
     } else {
+      console.log('Login successful, redirecting...')
       router.push('/')
       router.refresh()
     }

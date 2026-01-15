@@ -27,46 +27,64 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
 
   signIn: async (email: string, password: string) => {
+    console.log('signIn called', { email })
     const supabase = createClient()
     set({ loading: true })
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    })
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      })
 
-    set({ loading: false })
+      set({ loading: false })
 
-    if (error) {
-      return { error: error.message }
+      if (error) {
+        console.error('SignIn error:', error)
+        return { error: error.message }
+      }
+
+      console.log('SignIn success:', data.user)
+      set({ user: data.user })
+      return { error: null }
+    } catch (err) {
+      console.error('SignIn exception:', err)
+      set({ loading: false })
+      return { error: err instanceof Error ? err.message : 'Unknown error' }
     }
-
-    set({ user: data.user })
-    return { error: null }
   },
 
   signUp: async (email: string, password: string, fullName?: string) => {
+    console.log('signUp called', { email, fullName })
     const supabase = createClient()
     set({ loading: true })
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: fullName || '',
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name: fullName || '',
+          },
         },
-      },
-    })
+      })
 
-    set({ loading: false })
+      set({ loading: false })
 
-    if (error) {
-      return { error: error.message }
+      if (error) {
+        console.error('SignUp error:', error)
+        return { error: error.message }
+      }
+
+      console.log('SignUp success:', data.user)
+      set({ user: data.user })
+      return { error: null }
+    } catch (err) {
+      console.error('SignUp exception:', err)
+      set({ loading: false })
+      return { error: err instanceof Error ? err.message : 'Unknown error' }
     }
-
-    set({ user: data.user })
-    return { error: null }
   },
 
   signOut: async () => {
