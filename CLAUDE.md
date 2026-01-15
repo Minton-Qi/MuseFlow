@@ -263,7 +263,48 @@ When BigModel API fails, the system:
 - **Seeding:** Run `npm run db:seed` locally or configure CI/CD
 - **Domain:** Update `NEXT_PUBLIC_APP_URL` for production URL
 
+### ⚠️ CRITICAL: Git Repository Setup
+
+**This project has TWO remote repositories:**
+- `origin` → Gitee (https://gitee.com/minton-qi/muse-flow.git)
+- `github` → GitHub (https://github.com/Minton-Qi/MuseFlow.git)
+
+**Vercel is connected to GitHub, NOT Gitee!**
+
+When deploying changes:
+```bash
+# Push to GitHub (triggers Vercel deployment)
+git push github main
+
+# Push to Gitee (backup, does NOT trigger deployment)
+git push origin main
+
+# Push to both (recommended)
+git push github main && git push origin main
+```
+
+**ALWAYS push to `github` remote after making changes** to trigger Vercel deployment.
+If you only push to `origin` (Gitee), Vercel will NOT deploy your changes.
+
+Check remotes: `git remote -v`
+
 ## Common Tasks
+
+### Pushing code to trigger Vercel deployment
+**IMPORTANT: This project uses TWO remotes (GitHub & Gitee)**
+
+1. Check which remotes exist: `git remote -v`
+2. Commit your changes: `git commit -m "your message"`
+3. **Push to GitHub to trigger Vercel deployment:**
+   ```bash
+   git push github main  # This triggers Vercel!
+   ```
+4. Optional: Also push to Gitee for backup:
+   ```bash
+   git push origin main  # Backup only, no deployment
+   ```
+
+**Common mistake:** Using `git push` without specifying remote will push to `origin` (Gitee), which does NOT trigger Vercel deployment.
 
 ### Adding a new writing topic
 1. Add to `supabase/migrations/004_seed_topics_v2.sql` (or create new migration)
