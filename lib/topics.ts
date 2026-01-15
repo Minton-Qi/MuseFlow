@@ -604,14 +604,39 @@ export async function fetchTopicsFromDatabase(options?: {
 
 // 客户端随机获取话题 (从数据库)
 // Client-side: Get random topics from database
-export async function getRandomTopics(count: number = 3): Promise<Topic[]> {
+export async function getRandomTopics(
+  count: number = 3,
+  excludeIds: string[] = []
+): Promise<Topic[]> {
   try {
-    const topics = await fetchTopicsFromDatabase({ limit: count * 3 }) // Get more to randomize
-    const shuffled = [...topics].sort(() => Math.random() - 0.5)
+    // 获取所有 topics 以确保最大的随机性和新鲜度
+    // Fetch all topics to ensure maximum randomness and freshness
+    const allTopics = await fetchTopicsFromDatabase({ limit: 100 })
+
+    // 过滤掉最近显示过的 topics
+    // Filter out recently shown topics
+    const availableTopics = allTopics.filter(topic => !excludeIds.includes(topic.id))
+
+    // 如果可用的 topics 不够，就使用全部 topics
+    // If not enough available topics, use all topics
+    const topicsToRandomize = availableTopics.length >= count
+      ? availableTopics
+      : allTopics
+
+    // Fisher-Yates 洗牌算法 (更好的随机性)
+    // Fisher-Yates shuffle algorithm (better randomness)
+    const shuffled = [...topicsToRandomize]
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1))
+      ;[shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+    }
+
     return shuffled.slice(0, count)
   } catch (error) {
     console.error('Error getting random topics:', error)
-    return fallbackTopicsDatabase.slice(0, count)
+    const available = fallbackTopicsDatabase.filter(t => !excludeIds.includes(t.id))
+    const shuffled = available.length >= count ? available : fallbackTopicsDatabase
+    return shuffled.slice(0, count)
   }
 }
 

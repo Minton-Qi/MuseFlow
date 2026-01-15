@@ -21,11 +21,12 @@ export default function Home() {
   const [showFeedback, setShowFeedback] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [recentTopicIds, setRecentTopicIds] = useState<string[]>([]); // 记录最近显示过的 topics
 
   // Initialize topics only on client side to avoid hydration mismatch
   useEffect(() => {
     async function loadTopics() {
-      const fetchedTopics = await getRandomTopics(3)
+      const fetchedTopics = await getRandomTopics(3, recentTopicIds)
       setTopics(fetchedTopics)
       setMounted(true)
     }
@@ -79,7 +80,17 @@ export default function Home() {
   const handleRefreshTopics = async () => {
     setIsRefreshing(true);
     setTimeout(async () => {
-      const newTopics = await getRandomTopics(3)
+      // 将当前显示的 topics 添加到最近显示列表
+      // Add current topics to recent list
+      const currentIds = topics.map(t => t.id)
+      const updatedRecentIds = [...recentTopicIds, ...currentIds]
+
+      // 只保留最近 20 个，避免列表过长
+      // Keep only last 20 to avoid list growing too long
+      const trimmedRecentIds = updatedRecentIds.slice(-20)
+
+      const newTopics = await getRandomTopics(3, trimmedRecentIds)
+      setRecentTopicIds(trimmedRecentIds)
       setTopics(newTopics)
       setIsRefreshing(false)
     }, 600)
