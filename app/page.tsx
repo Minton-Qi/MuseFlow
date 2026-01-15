@@ -24,15 +24,20 @@ export default function Home() {
 
   // Initialize topics only on client side to avoid hydration mismatch
   useEffect(() => {
-    setTopics(getRandomTopics(3));
-    setMounted(true);
+    async function loadTopics() {
+      const fetchedTopics = await getRandomTopics(3)
+      setTopics(fetchedTopics)
+      setMounted(true)
+    }
+
+    loadTopics()
 
     // Check if editing an existing session
     const editSessionId = searchParams.get('session')
     if (editSessionId) {
       loadSessionForEdit(editSessionId)
     }
-  }, [searchParams]);
+  }, [searchParams])
 
   // Load existing session for editing
   const loadSessionForEdit = async (sessionId: string) => {
@@ -71,13 +76,14 @@ export default function Home() {
     }
   }
 
-  const handleRefreshTopics = () => {
+  const handleRefreshTopics = async () => {
     setIsRefreshing(true);
-    setTimeout(() => {
-      setTopics(getRandomTopics(3));
-      setIsRefreshing(false);
-    }, 600);
-  };
+    setTimeout(async () => {
+      const newTopics = await getRandomTopics(3)
+      setTopics(newTopics)
+      setIsRefreshing(false)
+    }, 600)
+  }
 
   const handleSelectTopic = (topic: Topic) => {
     setSelectedTopic(topic);
@@ -96,11 +102,11 @@ export default function Home() {
     setShowFeedback(true);
   };
 
-  const handleStartNew = () => {
+  const handleStartNew = async () => {
     setSelectedTopic(null);
     setWritingContent("");
     setShowFeedback(false);
-    handleRefreshTopics();
+    await handleRefreshTopics();
   };
 
   // Show feedback page
