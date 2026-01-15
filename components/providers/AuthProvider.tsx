@@ -26,18 +26,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     init()
-
-    // Add timeout to prevent infinite loading
-    const timeout = setTimeout(() => {
-      if (!isInitialized) {
-        console.warn('Auth initialization timed out')
-        setLoading(false)
-        setIsInitialized(true)
-      }
-    }, 3000)
-
-    return () => clearTimeout(timeout)
-  }, [refreshSession, setLoading, isInitialized])
+  }, [refreshSession, setLoading])
 
   // Prevent flash of unauthenticated content
   if (!isInitialized) {
